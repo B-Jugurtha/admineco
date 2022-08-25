@@ -53,12 +53,12 @@ model Session {
 }
 
 enum Role {
-    CLIENT
-    STAFF
-    DEVLIV
-    PROV
-    ADMIN
-    SUPERADMIN
+    Client
+    Staff
+    Livreur
+    Fournisseur
+    Admin
+    Superadmin
 }
 
 model User {
@@ -67,11 +67,15 @@ model User {
     email         String?   @unique
     emailVerified DateTime?
     image         String?
-    role          Role      @default(CLIENT)
+    role          Role      @default(Client)
     notes         Note[]
+    company       Company?  @relation(fields: [company_id], references: [id])
+    company_id    String?   @unique
     phones        String?
     accounts      Account[]
     sessions      Session[]
+    commands      Command[]
+    supply        Supply[]
 }
 
 model Note {
@@ -93,4 +97,139 @@ model VerificationToken {
     expires    DateTime
 
     @@unique([identifier, token])
+}
+
+// STORE
+
+model Company {
+    id                 String      @id @default(cuid())
+    role               CompanyType
+    name               String
+    address            String
+    phones             String
+    employees          User[]
+    commands           Command[]
+    supplies_delivery  Supply[]    @relation(name: "delivery")
+    supplies_provision Supply[]    @relation(name: "provider")
+}
+
+enum CompanyType {
+    Livraison
+    Fournisseur
+    Vendeur
+}
+
+model Command {
+    id                   Int            @id @default(autoincrement())
+    delivery_company     Company        @relation(fields: [delivery_company_id], references: [id], onDelete: Cascade)
+    delivery_company_id  String         @unique
+    items                CommandItem[]
+    total_cost           Float
+    delivery_fee         Float
+    delivery_address     String
+    delivery_address_gps String
+    created_at           DateTime       @default(now())
+    //no facture
+    delivery_date        DateTime?
+    status               DeliveryStatus @default(Approvisionement)
+    created_by           User           @relation(fields: [client_id], references: [id], onDelete: Cascade)
+    client_id            String         @unique
+}
+
+enum DeliveryStatus {
+    Approvisionement
+    Attente_Livraison
+    En_Livraison
+    Complete
+    Annulee
+}
+
+model CommandItem {
+    id           String      @id @default(cuid())
+    product_unit ProductUnit @relation(fields: [sku], references: [sku], onDelete: Cascade)
+    sku          String      @unique
+    qte          Int
+    unit_price   Float
+    command      Command     @relation(fields: [command_id], references: [id], onDelete: Cascade)
+    command_id   Int         @unique
+}
+
+model Supply {
+    id                  Int             @id @default(autoincrement())
+    payed               Boolean
+    total_cost          Float?
+    delivery_fees       Float?
+    created_at          DateTime        @default(now())
+    craeted_by          User            @relation(fields: [user_id], references: [id], onDelete: Cascade)
+    user_id             String          @unique
+    delivery_date       DateTime?
+    delivery_company    Company         @relation(name: "delivery", fields: [delivery_company_id], references: [id], onDelete: Cascade)
+    delivery_company_id String          @unique
+    provider_company    Company         @relation(name: "provider", fields: [provider_company_id], references: [id], onDelete: Cascade)
+    provider_company_id String          @unique
+    status              ProvisionStatus @default(En_Attente)
+    extra_ref           String?
+    delivery_address    String
+}
+
+model SupplyItem {
+    id      Int         @id @default(autoincrement())
+    product ProductUnit @relation(fields: [sku], references: [sku], onDelete: Cascade)
+    sku     String      @unique
+}
+
+enum ProvisionStatus {
+    Complete
+    En_Livraison
+    En_Attente
+    Annulee
+}
+
+model ProductIdentity {
+    sku                 String            @id
+    associated_products ProductUnit[]
+    product_group       ProductGroup      @relation(fields: [product_group_id], references: [id], onDelete: Cascade)
+    product_group_id    String            @unique
+    variation           ProductVariation?
+    upc                 String            @unique
+}
+
+model ProductVariation {
+    id                  String          @id @default(cuid())
+    product_identity    ProductIdentity @relation(fields: [product_identity_id], references: [sku])
+    product_identity_id String          @unique
+    name                String
+    photos              String
+    color_name          String?
+    color_hex           String?
+    size                String?
+    weight              String?
+}
+
+model ProductGroup {
+    id                 String            @id @default(cuid())
+    product_identities ProductIdentity[]
+    characteristics    String
+}
+
+model ProductUnit {
+    id               Int             @id @default(autoincrement())
+    product_identity ProductIdentity @relation(fields: [sku], references: [sku], onDelete: Cascade)
+    sku              String          @unique
+    supply_item      SupplyItem[]
+    command_item     CommandItem[]
+    purchase_date    DateTime?
+    purchase_price   Float
+    expiration_date  DateTime?
+}
+
+enum ProductStatus {
+    Vendu
+    En_Stock
+    En_Livraison
+    En_Attente
+}
+
+model invoice {
+    id Int @id @default(autoincrement())
 }
