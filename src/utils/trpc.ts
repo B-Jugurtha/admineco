@@ -26,6 +26,13 @@ export const trpc = setupTRPC<AppRouter>({
       /**
        * @link https://trpc.io/docs/data-transformers
        */
+      queryClientConfig: {
+        defaultOptions: {
+          queries: {
+            refetchOnWindowFocus: false,
+          },
+        },
+      },
       transformer: superjson,
       /**
        * @link https://trpc.io/docs/links

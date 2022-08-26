@@ -1,6 +1,6 @@
 import { trpc } from '@/utils/trpc';
 import { DropdownArrow } from 'assets/icons/dropdownArrow';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 import Head from 'next/head';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -16,7 +16,7 @@ const Layout: React.FC<ILayout> = ({
   justify = 'items-center',
   ...divProps
 }) => {
-  const { data, isLoading } = trpc.proxy.user.getUserInfo.useQuery();
+  const { data: session, status } = useSession();
   const [showProfilDropdown, setShowProfilDropdown] = useState(false);
   return (
     <>
@@ -30,54 +30,42 @@ const Layout: React.FC<ILayout> = ({
             <nav className="navbar w-full flex justify-between items-center">
               <div className="flex-1"></div>
               <div className="flex items-center gap-4 ">
-                {data ? (
-                  <div
-                    className="flex items-center gap-4 p-2 hover:bg-base-100 hover:cursor-pointer relative"
-                    onClick={() => {
-                      setShowProfilDropdown(!showProfilDropdown);
-                    }}
-                  >
-                    {isLoading ? (
-                      <span className="w-4 h-4 bg-red-500 rounded-full"></span>
-                    ) : (
-                      <span className="w-8 h-8 bg-red-500 rounded-full">
-                        <Image
-                          src={data?.image || ''}
-                          width={96}
-                          height={96}
-                          alt="user profile"
-                          className="rounded-full"
-                        />
-                      </span>
-                    )}
-                    {isLoading ? (
-                      <span>Chargement</span>
-                    ) : (
-                      <span>{data?.name}</span>
-                    )}
-                    <DropdownArrow />
-                    {showProfilDropdown ? (
-                      <ul className="absolute flex flex-col w-full p-2 m-0 top-16 right-0 bg-base-300">
-                        <li className="h-8 flex items-center hover:bg-base-100 hover:cursor-pointer">
-                          Profil
-                        </li>
-                        <li
-                          className="h-8 flex items-center hover:bg-base-100 hover:cursor-pointer"
-                          onClick={() => {
-                            signOut();
-                            setShowProfilDropdown(false);
-                          }}
-                        >
-                          Se deconnecter
-                        </li>
-                      </ul>
-                    ) : (
-                      ''
-                    )}
-                  </div>
-                ) : (
-                  ''
-                )}
+                <div
+                  className="flex items-center gap-4 p-2 hover:bg-base-100 hover:cursor-pointer relative"
+                  onClick={() => {
+                    setShowProfilDropdown(!showProfilDropdown);
+                  }}
+                >
+                  <span className="w-8 h-8 bg-red-500 rounded-full">
+                    <Image
+                      src={session?.user?.image || ''}
+                      width={96}
+                      height={96}
+                      alt="user profile"
+                      className="rounded-full"
+                    />
+                  </span>
+                  <span>{session?.user?.name}</span>
+                  <DropdownArrow />
+                  {showProfilDropdown ? (
+                    <ul className="absolute flex flex-col w-full p-2 m-0 top-16 right-0 bg-base-300">
+                      <li className="h-8 flex items-center hover:bg-base-100 hover:cursor-pointer">
+                        Profil
+                      </li>
+                      <li
+                        className="h-8 flex items-center hover:bg-base-100 hover:cursor-pointer"
+                        onClick={() => {
+                          signOut();
+                          setShowProfilDropdown(false);
+                        }}
+                      >
+                        Se deconnecter
+                      </li>
+                    </ul>
+                  ) : (
+                    ''
+                  )}
+                </div>
               </div>
             </nav>
           </div>

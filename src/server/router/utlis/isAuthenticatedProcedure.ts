@@ -1,7 +1,5 @@
-import { trpc } from '@/utils/trpc';
 import { TRPCError } from '@trpc/server';
 import { t } from '../trpc';
-import { createContext } from '../trpc/context';
 
 const isProtected = t.middleware(({ ctx, next }) => {
   if (!ctx.session || !ctx.session.user) {
@@ -14,4 +12,4 @@ const isProtected = t.middleware(({ ctx, next }) => {
   });
 });
 
-export const protectedProcedure = t.procedure.use(isProtected);
+export const isAuthenticatedProcedure = t.procedure.use(isProtected);
